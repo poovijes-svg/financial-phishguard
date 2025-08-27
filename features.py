@@ -40,7 +40,7 @@ def get_features(url):
     except:
         features['has_ip'] = 0
     features['num_special_chars'] = url.count('@') + url.count('?') + url.count('=') + url.count('-')
-    features['domain_age_days'] = get_domain_age(url)  # From previous step
+    # features['domain_age_days'] = get_domain_age(url)  # From previous step
 
     # 2. NEW: HTML-based Features (The Big Upgrade)
     soup = get_page_content(url)
