@@ -1,0 +1,5 @@
+# Ignore the trained model and large data files
+*.joblib
+*.csv
+__pycache__/
+.env
