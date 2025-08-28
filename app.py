@@ -45,33 +45,30 @@ class SimplePhishingDetector:
     def predict_proba(self, features):
         prediction = self.predict(features)
         if prediction == 1:
-            return [[0.3, 0.7]]  # 70% confidence it's phishing
+            return np.array([[0.3, 0.7]])  # 70% confidence it's phishing
         else:
-            return [[0.7, 0.3]]  # 70% confidence it's legitimate
+            return np.array([[0.7, 0.3]])  # 70% confidence it's legitimate
 
 
 @st.cache_resource
 def load_model():
+    if not JOBLIB_AVAILABLE:
+        return SimplePhishingDetector()
+
     try:
-        # Try to load the pre-trained model
         model = joblib.load('model.joblib')
-        print("Loaded pre-trained model from file")
+        st.success("✅ Loaded pre-trained model")
         return model
     except FileNotFoundError:
-        # If the file doesn't exist, create a simple model as a fallback
-        print("Model file not found. Creating a simple fallback model...")
+        st.warning("⚠️ No pre-trained model found. Using simple rule-based detector.")
+        return SimplePhishingDetector()
+    except Exception as e:
+        st.error(f"❌ Error loading model: {e}")
+        return SimplePhishingDetector()
 
-        # Create a very simple model
-        from sklearn.ensemble import RandomForestClassifier
-        model = RandomForestClassifier(n_estimators=5, random_state=42)
 
-        # Train it on dummy data (so it has the right structure)
-        import numpy as np
-        X_dummy = np.array([[10, 0, 3], [50, 1, 8], [30, 0, 2]])
-        y_dummy = np.array([0, 1, 0])
-        model.fit(X_dummy, y_dummy)
-
-        return model
+# Load the model
+model = load_model()
 
 # Create the main interface
 st.title("🛡️ Financial PhishGuard")
@@ -139,7 +136,7 @@ with st.sidebar:
 
     # Show model information
     st.header("🔧 Model Information")
-    if isinstance(model, SimplePhishingDetector):
+    if hasattr(model, '__class__') and model.__class__.__name__ == 'SimplePhishingDetector':
         st.write("Using: Simple rule-based detector")
     else:
         st.write("Using: Pre-trained machine learning model")
