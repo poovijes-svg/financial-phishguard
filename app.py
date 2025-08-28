@@ -11,7 +11,7 @@ st.set_page_config(
 )
 
 
-# First, define a simple fallback model that will always be available
+# Define a simple fallback model that will always be available
 class SimplePhishingDetector:
     def predict(self, features):
         # Simple rule-based detection
@@ -40,10 +40,11 @@ class SimplePhishingDetector:
             return np.array([[0.7, 0.3]])  # 70% confidence it's legitimate
 
 
-# Initialize model with the simple detector as a fallback
+# Initialize model with the simple detector FIRST
+# This ensures model is always defined no matter what happens next
 model = SimplePhishingDetector()
 
-# Now try to import dependencies and load a better model if possible
+# Now try to import dependencies
 try:
     from features import get_features
 except ImportError:
@@ -51,12 +52,14 @@ except ImportError:
     def get_features(url):
         return {'url_length': len(url), 'has_ip': 0, 'num_special_chars': 0}
 
+# Try to load a better model if available
 try:
     import joblib
 
-    # Try to load a pre-trained model
     try:
-        model = joblib.load('model.joblib')
+        # Try to load a pre-trained model
+        loaded_model = joblib.load('model.joblib')
+        model = loaded_model  # Replace the simple model with the loaded one
         st.success("✅ Loaded pre-trained model")
     except FileNotFoundError:
         st.warning("⚠️ No pre-trained model found. Using simple rule-based detector.")
@@ -128,9 +131,9 @@ with st.sidebar:
     Always use caution when entering sensitive information online.
     """)
 
-    # Show model information in a simpler way
+    # Show model information
     st.header("🔧 Model Information")
-    st.write("Using: Simple rule-based detector")  # We can assume this for now to avoid errors
+    st.write("Using: Simple rule-based detector")
 
 # Add some footer information
 st.markdown("---")
