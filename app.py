@@ -2,7 +2,6 @@
 import streamlit as st
 import pandas as pd
 import numpy as np
-from features import get_features
 
 # Set the page title and icon
 st.set_page_config(
@@ -12,7 +11,7 @@ st.set_page_config(
 )
 
 
-# Simple fallback model
+# First, let's define a simple fallback model that will always be available
 class SimplePhishingDetector:
     def predict(self, features):
         # Simple rule-based detection
@@ -41,13 +40,15 @@ class SimplePhishingDetector:
             return np.array([[0.7, 0.3]])  # 70% confidence it's legitimate
 
 
-# Initialize model with a simple fallback first
+# Initialize model with the simple detector as a fallback
 model = SimplePhishingDetector()
 
-# Try to load a better model if available
+# Now try to import dependencies and load a better model if possible
 try:
+    from features import get_features
     import joblib
 
+    # Try to load a pre-trained model
     try:
         model = joblib.load('model.joblib')
         st.success("✅ Loaded pre-trained model")
@@ -55,8 +56,14 @@ try:
         st.warning("⚠️ No pre-trained model found. Using simple rule-based detector.")
     except Exception as e:
         st.error(f"❌ Error loading model: {e}")
-except ImportError:
-    st.warning("Joblib not available. Using a simple rule-based detector instead.")
+
+except ImportError as e:
+    st.error(f"❌ Import error: {e}")
+
+
+    # Define a dummy get_features function if the import fails
+    def get_features(url):
+        return {'url_length': len(url), 'has_ip': 0, 'num_special_chars': 0}
 
 # Create the main interface
 st.title("🛡️ Financial PhishGuard")
