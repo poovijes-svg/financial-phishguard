@@ -128,6 +128,10 @@ with st.sidebar:
     Always use caution when entering sensitive information online.
     """)
 
+    # Show model information in a simpler way
+    st.header("🔧 Model Information")
+    st.write("Using: Simple rule-based detector")  # We can assume this for now to avoid errors
+
 # Add some footer information
 st.markdown("---")
 st.caption("Built as a demonstration project using Python and Streamlit")
