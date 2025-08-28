@@ -1,36 +1,43 @@
-# app.py
+# app_v2.py
 import streamlit as st
 import pandas as pd
 import numpy as np
-
-# Set the page title and icon
-st.set_page_config(
-    page_title="Financial PhishGuard",
-    page_icon="🛡️",
-    layout="centered"
-)
+from urllib.parse import urlparse
+import re
 
 
-# Define a simple fallback model
+# Define the model class at the VERY TOP
 class SimplePhishingDetector:
     def predict(self, features):
-        # Simple rule-based detection
+        # Convert Pandas Series to dictionary if needed
+        if hasattr(features, 'to_dict'):  # This is a Pandas Series
+            features = features.to_dict()
+
+        # Now we can safely use .get() method
         score = 0
 
         # URL length check
-        if features.get('url_length', 0) > 75:
+        if features.get('url_length', 0) > 50:
             score += 1
 
         # IP address check
         if features.get('has_ip', 0) == 1:
-            score += 2
+            score += 3
 
         # Special characters check
-        if features.get('num_special_chars', 0) > 5:
+        if features.get('num_special_chars', 0) > 3:
             score += 1
 
-        # Simple threshold-based decision
-        return 1 if score >= 2 else 0
+        # Check for suspicious keywords in domain
+        if features.get('suspicious_keywords', 0) > 0:
+            score += 2
+
+        # Check for multiple subdomains
+        if features.get('num_subdomains', 0) > 2:
+            score += 1
+
+        # Adjust threshold as needed
+        return 1 if score >= 3 else 0
 
     def predict_proba(self, features):
         prediction = self.predict(features)
@@ -40,70 +47,71 @@ class SimplePhishingDetector:
             return np.array([[0.7, 0.3]])  # 70% confidence it's legitimate
 
 
-# Initialize model with the simple detector
+# Initialize the model immediately after its definition
 model = SimplePhishingDetector()
 
-# Try to import get_features, with a fallback
-try:
-    from features import get_features
-except:
-    # Define a simple fallback if import fails
-    def get_features(url):
-        return {'url_length': len(url), 'has_ip': 0, 'num_special_chars': 0}
 
-# Create the main interface
+# Simple feature extraction function
+def get_features(url):
+    features = {}
+
+    # Feature 1: Length of URL
+    features['url_length'] = len(url)
+
+    # Feature 2: Check if URL uses an IP address
+    try:
+        parsed_url = urlparse(url)
+        hostname = parsed_url.hostname
+        # Check if hostname looks like an IP address
+        is_ip = 1 if (hostname and re.match(r"^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$", hostname)) else 0
+        features['has_ip'] = is_ip
+    except:
+        features['has_ip'] = 0
+
+    # Feature 3: Count special characters
+    features['num_special_chars'] = url.count('@') + url.count('?') + url.count('=') + url.count('-')
+
+    return features
+
+
+# Create the app interface
+st.set_page_config(
+    page_title="Financial PhishGuard",
+    page_icon="🛡️",
+    layout="centered"
+)
+
 st.title("🛡️ Financial PhishGuard")
-st.markdown("""
-**An AI-powered tool that analyzes websites to detect financial phishing attempts.**
-Paste a URL below to check its safety.
-""")
+st.markdown("Analyze URLs to detect potential phishing attempts")
 
-# Create a text input for the user
-url_input = st.text_input("**Enter the URL to analyze:**", placeholder="e.g., https://www.example.com/login")
+url_input = st.text_input("Enter a URL to analyze:", placeholder="https://example.com")
 
 if url_input:
-    # Add a spinning progress indicator while analyzing
-    with st.spinner('Analyzing URL... This may take a few seconds.'):
+    with st.spinner('Analyzing URL...'):
         try:
-            # Extract features from the URL
+            # Extract features
             features = get_features(url_input)
 
-            # Create a DataFrame for the features
-            feature_df = pd.DataFrame([features])
+            # Make prediction
+            probability = model.predict_proba(features)[0]
+            prediction = model.predict(features)
 
-            # Make a prediction
-            probability = model.predict_proba(feature_df)[0]
-            prediction = model.predict(feature_df)[0]
-
-            # Display the results
-            st.subheader("🔍 Analysis Result")
-
+            # Display results
             if prediction == 0:
-                st.success(f"**✅ LEGITIMATE** (Confidence: {probability[0] * 100:.1f}%)")
+                st.success(f"✅ **LEGITIMATE** (Confidence: {probability[0] * 100:.1f}%)")
             else:
-                st.error(f"**🚨 PHISHING THREAT DETECTED!** (Confidence: {probability[1] * 100:.1f}%)")
-                st.warning("**Do not enter any personal or financial information on this site!**")
+                st.error(f"🚨 **PHISHING THREAT DETECTED!** (Confidence: {probability[1] * 100:.1f}%)")
+                st.warning("Do not enter any personal information on this site!")
 
-            # Show a detailed breakdown of the features
-            st.subheader("📊 Extracted Features")
-            st.write("Here are the characteristics we analyzed:")
+            # Show the features that were analyzed
+            st.subheader("Analysis Details")
+            feature_df = pd.DataFrame([features])
             st.dataframe(feature_df.T.rename(columns={0: 'Value'}))
 
         except Exception as e:
             st.error(f"An error occurred during analysis: {e}")
 
-# Add a sidebar with information
+# Add some information
 with st.sidebar:
-    st.header("ℹ️ About")
-    st.markdown("""
-    This tool analyzes websites to detect potential phishing attempts.
-    """)
-
-    st.header("⚠️ Disclaimer")
-    st.markdown("""
-    This is a demonstration tool. Always use caution when entering sensitive information online.
-    """)
-
-# Add some footer information
-st.markdown("---")
-st.caption("Built as a demonstration project using Python and Streamlit")
+    st.header("About")
+    st.markdown("This tool analyzes URLs for potential phishing attempts using simple heuristics.")
