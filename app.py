@@ -52,23 +52,26 @@ class SimplePhishingDetector:
 
 @st.cache_resource
 def load_model():
-    if not JOBLIB_AVAILABLE:
-        return SimplePhishingDetector()
-
     try:
+        # Try to load the pre-trained model
         model = joblib.load('model.joblib')
-        st.success("✅ Loaded pre-trained model")
+        print("Loaded pre-trained model from file")
         return model
     except FileNotFoundError:
-        st.warning("⚠️ No pre-trained model found. Using simple rule-based detector.")
-        return SimplePhishingDetector()
-    except Exception as e:
-        st.error(f"❌ Error loading model: {e}")
-        return SimplePhishingDetector()
+        # If the file doesn't exist, create a simple model as a fallback
+        print("Model file not found. Creating a simple fallback model...")
 
+        # Create a very simple model
+        from sklearn.ensemble import RandomForestClassifier
+        model = RandomForestClassifier(n_estimators=5, random_state=42)
 
-# Load the model
-model = load_model()
+        # Train it on dummy data (so it has the right structure)
+        import numpy as np
+        X_dummy = np.array([[10, 0, 3], [50, 1, 8], [30, 0, 2]])
+        y_dummy = np.array([0, 1, 0])
+        model.fit(X_dummy, y_dummy)
+
+        return model
 
 # Create the main interface
 st.title("🛡️ Financial PhishGuard")

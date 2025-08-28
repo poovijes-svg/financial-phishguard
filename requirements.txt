@@ -1,5 +1,7 @@
 streamlit
+scikit-learn
 pandas
 numpy
 requests
-beautifulsoup4
+beautifulsoup4  # <-- This line must be present
+joblib
