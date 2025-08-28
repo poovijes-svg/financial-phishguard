@@ -1,7 +1,7 @@
 # features.py
 import re
 from urllib.parse import urlparse
-import whois
+#import whois
 from datetime import datetime
 import requests
 from bs4 import BeautifulSoup
@@ -87,7 +87,7 @@ def get_features(url):
     return features
 
 
-def get_domain_age(url):
+'''def get_domain_age(url):
     """ (Keep your existing get_domain_age function here) """
     try:
         parsed_url = urlparse(url)
@@ -109,7 +109,7 @@ def get_domain_age(url):
     except Exception as e:
         print(f"WHOIS lookup failed for {url}: {e}")
         return -1
-
+'''
 
 # Test the new function
 if __name__ == '__main__':
