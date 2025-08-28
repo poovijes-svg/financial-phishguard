@@ -11,17 +11,8 @@ st.set_page_config(
     layout="centered"
 )
 
-# Try to import joblib, but provide a fallback if it fails
-try:
-    import joblib
 
-    JOBLIB_AVAILABLE = True
-except ImportError:
-    JOBLIB_AVAILABLE = False
-    st.warning("Joblib not available. Using a simple rule-based detector instead.")
-
-
-# Simple fallback model if joblib is not available or model file is missing
+# Simple fallback model
 class SimplePhishingDetector:
     def predict(self, features):
         # Simple rule-based detection
@@ -50,25 +41,22 @@ class SimplePhishingDetector:
             return np.array([[0.7, 0.3]])  # 70% confidence it's legitimate
 
 
-@st.cache_resource
-def load_model():
-    if not JOBLIB_AVAILABLE:
-        return SimplePhishingDetector()
+# Initialize model with a simple fallback first
+model = SimplePhishingDetector()
+
+# Try to load a better model if available
+try:
+    import joblib
 
     try:
         model = joblib.load('model.joblib')
         st.success("✅ Loaded pre-trained model")
-        return model
     except FileNotFoundError:
         st.warning("⚠️ No pre-trained model found. Using simple rule-based detector.")
-        return SimplePhishingDetector()
     except Exception as e:
         st.error(f"❌ Error loading model: {e}")
-        return SimplePhishingDetector()
-
-
-# Load the model
-model = load_model()
+except ImportError:
+    st.warning("Joblib not available. Using a simple rule-based detector instead.")
 
 # Create the main interface
 st.title("🛡️ Financial PhishGuard")
@@ -104,7 +92,6 @@ if url_input:
 
             if prediction == 0:
                 st.success(f"**✅ LEGITIMATE** (Confidence: {probability[0] * 100:.1f}%)")
-                st.balloons()
             else:
                 st.error(f"**🚨 PHISHING THREAT DETECTED!** (Confidence: {probability[1] * 100:.1f}%)")
                 st.warning("**Do not enter any personal or financial information on this site!**")
@@ -133,13 +120,6 @@ with st.sidebar:
     it should not be your only source of truth for website safety.
     Always use caution when entering sensitive information online.
     """)
-
-    # Show model information
-    st.header("🔧 Model Information")
-    if hasattr(model, '__class__') and model.__class__.__name__ == 'SimplePhishingDetector':
-        st.write("Using: Simple rule-based detector")
-    else:
-        st.write("Using: Pre-trained machine learning model")
 
 # Add some footer information
 st.markdown("---")
