@@ -11,7 +11,7 @@ st.set_page_config(
 )
 
 
-# Define a simple fallback model at the VERY TOP of the file
+# Define a simple fallback model
 class SimplePhishingDetector:
     def predict(self, features):
         # Simple rule-based detection
@@ -40,24 +40,8 @@ class SimplePhishingDetector:
             return np.array([[0.7, 0.3]])  # 70% confidence it's legitimate
 
 
-# Initialize model with the simple detector at the TOP LEVEL
-# This ensures model is always defined no matter what happens
+# Initialize model with the simple detector
 model = SimplePhishingDetector()
-
-# Now try to load a better model if available
-try:
-    import joblib
-
-    try:
-        # Try to load a pre-trained model
-        model = joblib.load('model.joblib')
-        st.success("✅ Loaded pre-trained model")
-    except:
-        # If loading fails, keep using the simple model
-        st.warning("⚠️ No pre-trained model found. Using simple rule-based detector.")
-except:
-    # If joblib isn't available, keep using the simple model
-    st.warning("Joblib not available. Using simple rule-based detector.")
 
 # Try to import get_features, with a fallback
 try:
