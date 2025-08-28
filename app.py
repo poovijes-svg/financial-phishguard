@@ -11,7 +11,7 @@ st.set_page_config(
 )
 
 
-# Define a simple fallback model that will always be available
+# Define a simple fallback model at the VERY TOP of the file
 class SimplePhishingDetector:
     def predict(self, features):
         # Simple rule-based detection
@@ -40,33 +40,32 @@ class SimplePhishingDetector:
             return np.array([[0.7, 0.3]])  # 70% confidence it's legitimate
 
 
-# Initialize model with the simple detector FIRST
-# This ensures model is always defined no matter what happens next
+# Initialize model with the simple detector at the TOP LEVEL
+# This ensures model is always defined no matter what happens
 model = SimplePhishingDetector()
 
-# Now try to import dependencies
-try:
-    from features import get_features
-except ImportError:
-    # Define a dummy get_features function if the import fails
-    def get_features(url):
-        return {'url_length': len(url), 'has_ip': 0, 'num_special_chars': 0}
-
-# Try to load a better model if available
+# Now try to load a better model if available
 try:
     import joblib
 
     try:
         # Try to load a pre-trained model
-        loaded_model = joblib.load('model.joblib')
-        model = loaded_model  # Replace the simple model with the loaded one
+        model = joblib.load('model.joblib')
         st.success("✅ Loaded pre-trained model")
-    except FileNotFoundError:
+    except:
+        # If loading fails, keep using the simple model
         st.warning("⚠️ No pre-trained model found. Using simple rule-based detector.")
-    except Exception as e:
-        st.error(f"❌ Error loading model: {e}")
-except ImportError:
+except:
+    # If joblib isn't available, keep using the simple model
     st.warning("Joblib not available. Using simple rule-based detector.")
+
+# Try to import get_features, with a fallback
+try:
+    from features import get_features
+except:
+    # Define a simple fallback if import fails
+    def get_features(url):
+        return {'url_length': len(url), 'has_ip': 0, 'num_special_chars': 0}
 
 # Create the main interface
 st.title("🛡️ Financial PhishGuard")
@@ -89,13 +88,8 @@ if url_input:
             feature_df = pd.DataFrame([features])
 
             # Make a prediction
-            if hasattr(model, 'predict_proba'):
-                probability = model.predict_proba(feature_df)[0]
-                prediction = model.predict(feature_df)[0]
-            else:
-                # Fallback for simple model
-                probability = model.predict_proba(features)[0]
-                prediction = model.predict(features)
+            probability = model.predict_proba(feature_df)[0]
+            prediction = model.predict(feature_df)[0]
 
             # Display the results
             st.subheader("🔍 Analysis Result")
@@ -118,22 +112,13 @@ if url_input:
 with st.sidebar:
     st.header("ℹ️ About")
     st.markdown("""
-    This tool analyzes websites to detect potential phishing attempts by examining:
-    - **URL structure** (length, special characters)
-    - **Domain information** (IP address usage)
-    - **Page content** (forms, input fields)
+    This tool analyzes websites to detect potential phishing attempts.
     """)
 
     st.header("⚠️ Disclaimer")
     st.markdown("""
-    This is a demonstration tool. While it can help identify potential threats, 
-    it should not be your only source of truth for website safety.
-    Always use caution when entering sensitive information online.
+    This is a demonstration tool. Always use caution when entering sensitive information online.
     """)
-
-    # Show model information
-    st.header("🔧 Model Information")
-    st.write("Using: Simple rule-based detector")
 
 # Add some footer information
 st.markdown("---")
