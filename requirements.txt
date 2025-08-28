@@ -1,4 +1,5 @@
 streamlit==1.29.0
-scikit-learn==1.2.2  # Downgraded to a stable version
-pandas==1.5.3        # Downgraded for compatibility
+scikit-learn==1.0.2  # Much older but very stable version
+pandas==1.5.3
 numpy==1.24.3
+requests==2.31.0
