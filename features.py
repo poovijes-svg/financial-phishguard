@@ -4,7 +4,7 @@ from urllib.parse import urlparse
 #import whois
 from datetime import datetime
 import requests
-from bs4 import BeautifulSoup
+#from bs4 import BeautifulSoup
 import time
 
 
