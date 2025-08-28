@@ -11,7 +11,7 @@ st.set_page_config(
 )
 
 
-# First, let's define a simple fallback model that will always be available
+# First, define a simple fallback model that will always be available
 class SimplePhishingDetector:
     def predict(self, features):
         # Simple rule-based detection
@@ -46,6 +46,12 @@ model = SimplePhishingDetector()
 # Now try to import dependencies and load a better model if possible
 try:
     from features import get_features
+except ImportError:
+    # Define a dummy get_features function if the import fails
+    def get_features(url):
+        return {'url_length': len(url), 'has_ip': 0, 'num_special_chars': 0}
+
+try:
     import joblib
 
     # Try to load a pre-trained model
@@ -56,14 +62,8 @@ try:
         st.warning("⚠️ No pre-trained model found. Using simple rule-based detector.")
     except Exception as e:
         st.error(f"❌ Error loading model: {e}")
-
-except ImportError as e:
-    st.error(f"❌ Import error: {e}")
-
-
-    # Define a dummy get_features function if the import fails
-    def get_features(url):
-        return {'url_length': len(url), 'has_ip': 0, 'num_special_chars': 0}
+except ImportError:
+    st.warning("Joblib not available. Using simple rule-based detector.")
 
 # Create the main interface
 st.title("🛡️ Financial PhishGuard")
